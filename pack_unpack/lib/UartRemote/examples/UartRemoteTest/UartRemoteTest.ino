@@ -1,88 +1,67 @@
-#include "UartRemote.h"
-
+#include <Arduino.h>
+#include <struct.h>
 #include <stdarg.h>
 #include <string.h>
 #include <cstdio>
 
+#include "UartRemote.h"
 
 
 #define RXD1 18
 #define TXD1 19
 
-
-//#define UART Serial1
-
-char cmd[20]; // global temporary storage for command names
+char cmd[32]; // global temporary storage for command names
 
 UartRemote uartremote;
 
 
-
-void tst(unpackresult& args) {
-   float a,b;
-   uartremote.getvariables(args,&a,&b);
-   
-   float c=a+b;
-   Serial.println("sum = "+String(c));
-
-   uartremote.send("tstack","f",c);
+void led(Arguments args) {
+    int r,g,b,n;
+    unpack(args,&r,&g,&b,&n);
+    Serial.printf("LED on: %d, %d, %d, %d\n", r, g, b, n);
+    uartremote.send("ledack","B",0);
 }
 
-void tstarr(unpackresult& args) {
-   float a,b; unsigned char r[64];
-   uartremote.getvariables(args,r);
-   
-   unsigned char q[64];
-   for (int i=0; i<64; i++) {q[i]=i;}
-
-   uartremote.send("tstack","a64B",q);
+void add(Arguments args) {
+    int a,b;
+    unpack(args,&a,&b);
+    Serial.printf("sum on: %d, %d\n", a, b);
+    int c=a+b;
+    uartremote.send("imuack","i",c);
 }
 
-
-void led(unpackresult& args) {
-   int a,b,c;  float d,e,f,g;
-   uartremote.getvariables(args,&a,&b,&c,&d,&e,&f,&g);
-
-   printf("%d %d %d %f\n",a,b,c,d);
-   uartremote.send("ledack","b",0);
-}
-
-
+unsigned char buf[BUFSIZ] = {'\0',};
   
 void setup() {
-  // initialize serial port
-  Serial1.begin(230400, SERIAL_8N1, RXD1, TXD1);
+
+
+  Serial1.begin(115200, SERIAL_8N1, RXD1, TXD1);
   // debug 
-  Serial.begin(115200);
+  Serial.begin(9600);
   // put your setup code here, to run once:
 
   uartremote.add_command("led", &led);
-  uartremote.add_command("tst", &tst);
-  uartremote.add_command("tstarr",&tstarr);
+  uartremote.add_command("add", &add);
+  
+  Serial.printf("\n\n\n");
+  uartremote.testsend("led",buf,"4i",10,11,12,13);
+  int l=buf[1];
+  for (int i=0; i<l+2; i++) { Serial.printf("%02x ",buf[i]);}
+  Serial.println();
+    
+  Arguments args = uartremote.testreceive(cmd,buf);
+  Serial.println("executing received command");
+  uartremote.command(cmd,args);
+
+   
+  // put your setup code here, to run once:
 }
-
-
 
 void loop() {
   // put your main code here, to run repeatedly:
-  unpackresult rcvunpack = uartremote.receive(cmd);
+  Arguments args = uartremote.receive(cmd);
   Serial.println("Command received: "+String(cmd));
-  uartremote.command(cmd,rcvunpack);
+  uartremote.command(cmd,args);
  
 }
 
-
-
-/*
-# on micropython platform, use the follwoing code to test with this Arduino example
-
-
-from uartremote import *
-u=UartRemote()
-
-for i in range(10):                                                                       
-   q=u.send_receive('tst','2f',i*2,12.5)  
-
-
- 
- */
