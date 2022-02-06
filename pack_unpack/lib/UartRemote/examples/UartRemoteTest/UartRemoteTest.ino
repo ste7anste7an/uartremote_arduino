@@ -1,4 +1,5 @@
-##include <Arduino.h>
+//uncomment next lint from plotform io
+//#include <Arduino.h>
 #include <struct.h>
 #include <stdarg.h>
 #include <string.h>
@@ -64,4 +65,3 @@ void loop() {
   uartremote.command(cmd,args);
  
 }
-
