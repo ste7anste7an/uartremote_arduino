@@ -5,14 +5,14 @@ UartRemote::UartRemote() {}
 
 
 
-void UartRemote::add_command(char* cmd, void (*func)(Arguments)){
+void UartRemote::add_command(const char* cmd, void (*func)(Arguments)){
   cmds[nr_cmds].cmd=cmd;
   cmds[nr_cmds].function=func;
   nr_cmds++;
 }
 
 
-void UartRemote::command(char cmd[],Arguments args) {
+void UartRemote::command(const char* cmd,Arguments args) {
   for (int i=0; i<nr_cmds; i++) {
      //printf("checking cmd %s\n",cmds[i].cmd);
      if (strcmp(cmd,cmds[i].cmd)==0) {
@@ -24,6 +24,7 @@ void UartRemote::command(char cmd[],Arguments args) {
 
 unsigned char UartRemote::readserial1() {
   while (UART.available()==0) {
+    delay(10);
   }
   return UART.read();
 }
@@ -60,8 +61,7 @@ Arguments UartRemote::pack( unsigned char* buf, const char* format, ...) {
   return a;
 }
 
-void UartRemote::send(const char* cmd, const char* format, ...) {
-  unsigned char buf[BUFSIZ];
+void UartRemote::send_command(const char* cmd, const char* format, ...) {
   va_list args;
   va_start(args,format);
   pack_va_list((unsigned char*)data_buf,0,format,args);  
@@ -106,12 +106,12 @@ void UartRemote::testsend(const char* cmd, unsigned char* buf,const char* format
   buf[pt++]='>';
 }
 
-Arguments UartRemote::receive(char* cmd) {
+Arguments UartRemote::receive_command(char* cmd) {
   char delim=readserial1();
   if (delim!='<') {
     strcpy(cmd,"error");
     flush();
-    send("error","b",'!');
+    send_command("error","b",'!');
     return pack((unsigned char*)data_buf,"b","!");
   }
   //printf("left delim %d   %d!=60: %d\n",delim,delim,delim!=60);
@@ -136,7 +136,7 @@ Arguments UartRemote::receive(char* cmd) {
   if (delim!='>') {
       strcpy(cmd,"error");
       flush();
-      send("error","b",'!');
+      send_command("error","b",'!');
       return pack((unsigned char*)data_buf,"b","!");
   }
   Arguments a = {data_buf, format};
@@ -149,7 +149,7 @@ Arguments UartRemote::testreceive(char* cmd, unsigned char* buf) {
   if (delim!='<') {
     strcpy(cmd,"error");
     flush();
-    send("error","b",'!');
+    send_command("error","b",'!');
     return pack((unsigned char*)data_buf,"b","!");
   }
   unsigned char l =buf[pt++];
@@ -172,7 +172,7 @@ Arguments UartRemote::testreceive(char* cmd, unsigned char* buf) {
   if (delim!='>') {
       strcpy(cmd,"error");
       flush();
-      send("error","b",'!');
+      send_command("error","b",'!');
       return pack((unsigned char*)data_buf,"b","!"); 
   }
   Arguments a = {data_buf, format};

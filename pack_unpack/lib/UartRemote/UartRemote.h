@@ -34,7 +34,7 @@ struct Arguments {
 };
 
 struct cmd_map{
-  char* cmd;
+  const char* cmd;
   void (*function) (Arguments);
 }  ;
 
@@ -51,15 +51,15 @@ class UartRemote
     void flush();
     Arguments pack( unsigned char* buf, const char* format, ...);
     // template<typename... Args> Arguments pack( const char* format, Args... args);
-    void command(char cmd[],Arguments rcvunpack);
-    void send(const char* cmd, const char* format, ...) ;
+    void command(const char* cmd,Arguments rcvunpack);
+    void send_command(const char* cmd, const char* format, ...) ;
     void testsend(const char* cmd,unsigned char* buf, const char* format, ...);
     
 
-    Arguments receive(char* cmd);
+    Arguments receive_command(char* cmd);
     Arguments testreceive(char* cmd, unsigned char* buf);
     
-    void add_command(char * cmd,  void (*func)(Arguments) );
+    void add_command(const char * cmd,  void (*func)(Arguments) );
 
   cmd_map cmds[20];
   int nr_cmds;
